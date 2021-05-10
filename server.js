@@ -13,13 +13,8 @@ const httpServer = http.createServer(app)
 app.use(cors())
 
 // Serve all static files from the build directory
-const buildPath = path.join(__dirname, '..', 'build');
+const buildPath = path.join(__dirname, 'build');
 app.use(express.static(buildPath));
-
-// Keep routing functional, serve the index.html file for unknown routes
-app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-  });
 
 app.use(router)
 
