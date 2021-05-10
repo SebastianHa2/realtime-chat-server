@@ -1,14 +1,16 @@
 const express = require('express')
 const socketio = require('socket.io')
 const http = require('http')
+const path = require('path')
 const cors = require('cors')
 
 const router = require('./router')
 const {addUser, removeUser, getUser, getUsersInRoom} = require('./users')
-const { groupEnd } = require('console')
 
 const app = express()
 const httpServer = http.createServer(app)
+
+app.use(cors())
 
 app.use(router)
 
@@ -26,22 +28,24 @@ io.on("connection", socket => {
         if(error) {
             return callback({error})
         }
-        // Emitting a welcome message
+        // Emitting a welcome message to the user that joined
         socket.emit('message', {user: 'admin', text: `Welcome to the chat ${user.name}`})
 
-        // Broadcasting to everyone except the connecting user
+        // Broadcasting a message that user has joined
         socket.broadcast.to(user.room).emit('message', {user: 'admin', text: `${user.name} has joined ${user.room}`})
 
-        // Broadcasting add joined user to present users list
+        // Broadcasting the user that joined to the list of users present in the room
         socket.broadcast.to(user.room).emit('user-joined', usersInRoom)
 
+        // subscribing socket to the room that user entered
         socket.join(user.room)
 
+        // Sending back information about the list of users in the room
         callback(usersInRoom)
     })
 
+    // Listener for messages sent in the room
     socket.on('message-sent', (message, callback) => {
-        console.log(socket.id)
         const user = getUser(socket.id)
 
         io.to(user.room).emit('message', {user: user.name, text: message} )
@@ -49,6 +53,8 @@ io.on("connection", socket => {
         callback()
     })
 
+
+    // Listener for user leaving the room
     socket.on("disconnect", () => {
         console.log("User has disconnected")
 
@@ -63,6 +69,14 @@ io.on("connection", socket => {
         socket.broadcast.to(user.room).emit('user-left', usersInRoom)
     })
 })
+
+// Serve all static files from the build directory
+app.use(express.static(path.join(__dirname, 'build')));
+
+// Keep routing functional, serve the index.html file for unknown routes
+app.get('/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  });
 
 const PORT = process.env.PORT || 8080
 
