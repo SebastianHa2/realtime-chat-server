@@ -12,6 +12,15 @@ const httpServer = http.createServer(app)
 
 app.use(cors())
 
+// Serve all static files from the build directory
+const buildPath = path.join(__dirname, '..', 'build');
+app.use(express.static(buildPath));
+
+// Keep routing functional, serve the index.html file for unknown routes
+app.get('/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  });
+
 app.use(router)
 
 const io = socketio(httpServer, {
@@ -69,14 +78,6 @@ io.on("connection", socket => {
         socket.broadcast.to(user.room).emit('user-left', usersInRoom)
     })
 })
-
-// Serve all static files from the build directory
-app.use(express.static(path.join(__dirname, 'build')));
-
-// Keep routing functional, serve the index.html file for unknown routes
-app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-  });
 
 const PORT = process.env.PORT || 8080
 
