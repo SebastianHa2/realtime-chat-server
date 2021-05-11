@@ -15,7 +15,6 @@ app.use(cors())
 // Serve all static files from the build directory
 const buildPath = path.join(__dirname, 'build');
 app.use(express.static(buildPath));
-
 app.use(router)
 
 const io = socketio(httpServer, {
